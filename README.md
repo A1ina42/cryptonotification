@@ -8,7 +8,7 @@
   <h3 align="center">Crypto Notification</h3>
 
   <p align="center">
-    Бот, который информирует об изменении цены выбранной пользователем криптовалюты. @NotificationCrypto_bot
+    Бот, который информирует об изменении цены выбранной пользователем криптовалюты. https://t.me/NotificationCrypto_bot
     <br />
   </p>
 </p>
