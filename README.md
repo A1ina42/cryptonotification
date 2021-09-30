@@ -68,4 +68,6 @@ npm start
 * [Mongoose](https://mongoosejs.com)
 * [Telegraf.js](https://telegraf.js.org/)
 * [Moment.js](https://momentjs.com)
+* [axios](https://www.npmjs.com/package/axios)
+* [dotenv](https://www.npmjs.com/package/dotenv)
 
