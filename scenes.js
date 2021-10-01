@@ -84,7 +84,7 @@ adminScene.on("message", async (ctx) => {
 // Сцена "Мои подписки"
 mySubscribesScene.enter((ctx) => {
 	getMySubscribesKeyboard(ctx.message.from.id).then((res) => {
-		ctx.replyWithMarkdown(res.message, Markup.keyboard(res.subKeyboard).oneTime().resize());
+		ctx.replyWithMarkdown(res.message, Markup.keyboard(res.subscribes).oneTime().resize());
 	});
 });
 

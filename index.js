@@ -3,6 +3,7 @@ const {
 	session,
 	Scenes: {Stage},
 } = require("telegraf");
+const TelegrafLogger = require("telegraf-logger");
 const {
 	mainScene,
 	adminScene,
@@ -46,7 +47,12 @@ db.connect(process.env.MONGO_CONNECT).then(() => {
 		console.log("Start bot");
 	});
 });
-
+const logger = new TelegrafLogger({
+	log: console.log,
+	format: "%ut => @%u %fn %ln (%fi): <%ust> %c",
+	contentLength: 100,
+});
+bot.use(logger.middleware());
 bot.use(session());
 bot.use(stage.middleware());
 
@@ -54,48 +60,12 @@ const interval = setInterval(() => {
 	botSendMessage(bot);
 }, 1000 * 10);
 
-bot.action("5m", async (ctx) => {
+bot.action(/\d+/, async (ctx) => {
 	ctx.editMessageText(ctx.callbackQuery.message.text, ctx.callbackQuery.message.message_id, {
 		reply_markup: {remove_keyboard: true},
 	});
 	if (!ctx.session.intervalComplete) {
-		ctx.session.interval = 5;
-		await userSubscribe(ctx.from.id, ctx);
-		ctx.scene.enter("mainScene");
-		ctx.answerCbQuery();
-	}
-	ctx.session.intervalComplete = false;
-});
-bot.action("10m", async (ctx) => {
-	ctx.editMessageText(ctx.callbackQuery.message.text, ctx.callbackQuery.message.message_id, {
-		reply_markup: {remove_keyboard: true},
-	});
-	if (!ctx.session.intervalComplete) {
-		ctx.session.interval = 10;
-		await userSubscribe(ctx.from.id, ctx);
-		ctx.scene.enter("mainScene");
-		ctx.answerCbQuery();
-	}
-	ctx.session.intervalComplete = false;
-});
-bot.action("60m", async (ctx) => {
-	ctx.editMessageText(ctx.callbackQuery.message.text, ctx.callbackQuery.message.message_id, {
-		reply_markup: {remove_keyboard: true},
-	});
-	if (!ctx.session.intervalComplete) {
-		ctx.session.interval = 60;
-		await userSubscribe(ctx.from.id, ctx);
-		ctx.scene.enter("mainScene");
-		ctx.answerCbQuery();
-	}
-	ctx.session.intervalComplete = false;
-});
-bot.action("1440m", async (ctx) => {
-	ctx.editMessageText(ctx.callbackQuery.message.text, ctx.callbackQuery.message.message_id, {
-		reply_markup: {remove_keyboard: true},
-	});
-	if (!ctx.session.intervalComplete) {
-		ctx.session.interval = 1440;
+		ctx.session.interval = ctx.match[0];
 		await userSubscribe(ctx.from.id, ctx);
 		ctx.scene.enter("mainScene");
 		ctx.answerCbQuery();

@@ -1,5 +1,6 @@
 const User = require("./db/models/User");
 const {getAllPrice} = require("./api/axios.js");
+const chunk = require("chunk");
 require("dotenv").config();
 const adminIds = process.env.ADMIN_IDS;
 
@@ -81,62 +82,21 @@ async function getAllUsers() {
 // "Мои подписки"
 async function getMySubscribes(uid) {
 	const me = await getUserById(uid);
-	if (me.subscribes.length > 0) return me.subscribes;
+	if (me?.subscribes.length > 0) return me.subscribes;
 	else return null;
 }
 
 // Формирование клавиатуры для сцены "Мои подписки"
 async function getMySubscribesKeyboard(uid) {
 	const meSubscribes = await getMySubscribes(uid);
-	let subKeyboard = [];
+	let subscribes = [];
+	meSubscribes?.forEach((sub) => subscribes.push(sub.name));
 	let message = "";
-	let isKeyboardDefault = false;
-	if (meSubscribes != null) {
-		switch (meSubscribes.length) {
-			case 10:
-				for (let i = 0; i < 2; i++) {
-					subKeyboard.push([
-						meSubscribes[i * 5].name,
-						meSubscribes[i * 5 + 1].name,
-						meSubscribes[i * 5 + 2].name,
-						meSubscribes[i * 5 + 3].name,
-						meSubscribes[i * 5 + 4].name,
-					]);
-				}
-				break;
-			case 9:
-				for (let i = 0; i < 3; i++) {
-					subKeyboard.push([meSubscribes[i * 3].name, meSubscribes[i * 3 + 1].name, meSubscribes[i * 3 + 2].name]);
-				}
-				break;
-			case 8:
-				for (let i = 0; i < 2; i++) {
-					subKeyboard.push([
-						meSubscribes[i * 4].name,
-						meSubscribes[i * 4 + 1].name,
-						meSubscribes[i * 4 + 2].name,
-						meSubscribes[i * 4 + 3].name,
-					]);
-				}
-				break;
-			case 7:
-				for (let i = 0; i < 2; i++) {
-					subKeyboard.push([meSubscribes[i * 3].name, meSubscribes[i * 3 + 1].name, meSubscribes[i * 3 + 2].name]);
-				}
-				subKeyboard.push([meSubscribes[6].name]);
-				break;
-			case 6:
-				for (let i = 0; i < 2; i++) {
-					subKeyboard.push([meSubscribes[i * 3].name, meSubscribes[i * 3 + 1].name, meSubscribes[i * 3 + 2].name]);
-				}
-				break;
-			default:
-				await meSubscribes.forEach((sub, index) => {
-					subKeyboard.push(sub.name);
-				});
-				isKeyboardDefault = true;
-				break;
-		}
+	if (subscribes.length > 0) {
+		if (subscribes.length == 9 || subscribes.length == 7 || subscribes.length == 6) subscribes = chunk(subscribes, 3);
+		else if (subscribes.length == 10) subscribes = chunk(subscribes, 5);
+		else if (subscribes.length == 8) subscribes = chunk(subscribes, 4);
+		else subscribes = [subscribes];
 
 		await meSubscribes.forEach((sub, index) => {
 			const formatInterval = minToDHM(sub.interval);
@@ -144,13 +104,13 @@ async function getMySubscribesKeyboard(uid) {
 				sub.percent
 			}_\nИнтервал: _${formatInterval}_\nЦена: _${sub.price}$_\n\n`;
 		});
+
 		message += "Для редактирования выберите криптовалюту: ";
-		if (isKeyboardDefault) subKeyboard = [subKeyboard];
 	} else {
 		message = "У вас еще нет подписок";
 	}
-	subKeyboard.push(["Назад"]);
-	return {message, subKeyboard};
+	subscribes.push(["Назад"]);
+	return {message, subscribes};
 }
 
 // Получение строки всех криптовалют пользователей
@@ -166,13 +126,16 @@ async function getCurrenciesStr() {
 	return {allUsers, currenciesStr};
 }
 
+// Таймер
+const timer = (ms) => new Promise((res) => setTimeout(res, ms));
+
 // Рассылка сообщений об изменении цены
 async function botSendMessage(bot) {
 	const {allUsers, currenciesStr} = await getCurrenciesStr();
 	getAllPrice(currenciesStr).then((allCur) => {
 		allUsers.forEach((user) => {
 			if (user.subscribes.length > 0) {
-				user.subscribes.forEach((sub) => {
+				user.subscribes.forEach(async (sub) => {
 					let oldPrice = sub.price;
 					let newPrice = allCur[sub.name].USD;
 					let percentChange = (((newPrice - oldPrice) / oldPrice) * 100).toFixed(2);
@@ -184,13 +147,20 @@ async function botSendMessage(bot) {
 									: `🔴 Криптовалюта ${sub.name} упала на ${Math.abs(
 											percentChange
 									  )}%\nСтарая цена: ${oldPrice}$\nНовая цена: ${newPrice}$`;
+							await timer(100);
 							bot.telegram
 								.sendMessage(user.uid, message)
 								.then(() => {
 									updateFieldUser(user.uid, sub.name, "price", newPrice);
 									updateFieldUser(user.uid, sub.name, "updateTime", Date.now());
 								})
-								.catch((err) => deleteUser(user.uid));
+								.catch((err) => {
+									console.error(err);
+									if (err.response.error_code == 403) {
+										deleteUser(user.uid);
+										console.log(`Пользователь ${user.uid} удален.`);
+									}
+								});
 						}
 					}
 				});
