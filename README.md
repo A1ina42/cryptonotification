@@ -8,7 +8,7 @@
   <h3 align="center">Crypto Notification</h3>
 
   <p align="center">
-    Бот, который информирует об изменении цены выбранной пользователем криптовалюты.
+    Бот, который информирует об изменении цены выбранной пользователем криптовалюты. https://t.me/NotificationCrypto_bot
     <br />
   </p>
 </p>
@@ -29,7 +29,20 @@
 У администратора имеется возможность перейти в "Панель администратора", где можно посмотреть подписки выбранного пользователя.
 
 /main
-Команда для возврата в главное меню.'
+Команда для возврата в главное меню.
+
+
+
+<!-- Установка -->
+## Установка
+```
+npm install
+```
+
+### Запуск
+```
+npm start
+```
 
 
 
@@ -55,4 +68,6 @@
 * [Mongoose](https://mongoosejs.com)
 * [Telegraf.js](https://telegraf.js.org/)
 * [Moment.js](https://momentjs.com)
+* [axios](https://www.npmjs.com/package/axios)
+* [dotenv](https://www.npmjs.com/package/dotenv)
 
